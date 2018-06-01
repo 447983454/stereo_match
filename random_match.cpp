@@ -76,6 +76,9 @@ void update(Mat&imgL, Mat&imgR, Mat&score_mat, Mat&offset_mat, int maxOffset, in
 	for (int y = y_start; y != y_end; y+=step) {
 		float* row_score = score_mat.ptr<float>(y);
 		float* row_offset = offset_mat.ptr<float>(y);
+		float* y_row_offset = offset_mat.ptr<float>(y - step);
+		//float*y_row_score = score_mat.ptr<float>(y - step);
+
 		for (int x = x_start; x != x_end; x += step) {
 			float new_score[3];
 			new_score[0]= row_score[x];
@@ -87,14 +90,20 @@ void update(Mat&imgL, Mat&imgR, Mat&score_mat, Mat&offset_mat, int maxOffset, in
 					new_offset[1] = maxOffset;
 				new_score[1] = calc_score(imgL, imgR, x, y, new_offset[1], psize);
 			}
-			//if (y - step >= half_psize && y - step < imgL.rows - half_psize) {
-			//	new_offset[2] = row_offset[y - step] + step;
-			//	if(new_offset[2]>maxOffset)
-			//		new_offset[2] = maxOffset;
-			//	new_score[2] = calc_score(imgL, imgR, x, y, new_offset[1], psize);
-			//}
-			new_score[2] = FLT_MAX;
-			new_offset[2] = FLT_MAX;
+			else {
+				new_offset[1] = FLT_MAX;
+				new_score[1] = FLT_MAX;
+			}
+			if (y - step >= half_psize && y - step < imgL.rows - half_psize) {
+				new_offset[2] = y_row_offset[x];
+				if(new_offset[2]>maxOffset)
+					new_offset[2] = maxOffset;
+				new_score[2] = calc_score(imgL, imgR, x, y, new_offset[2], psize);
+			}
+			else {
+				new_offset[2] = FLT_MAX;
+				new_score[2] = FLT_MAX;
+			}
 			int choise = choose_best(new_score);
 			row_offset[x] = new_offset[choise];
 		}
